@@ -81,7 +81,18 @@ class ExactInference(object):
     def elapseTime(self):
         if self.skipElapse: return ### ONLY FOR THE GRADER TO USE IN Problem 2
         # BEGIN_YOUR_CODE (our solution is 7 lines of code, but don't worry if you deviate from this)
-        raise Exception("Not implemented yet")
+        pp = {}
+        for r in range(self.belief.getNumRows()):
+            for c in range(self.belief.getNumCols()):
+                pp[(r,c)] = self.belief.getProb(r,c)
+                self.belief.setProb(r,c,0)
+        for t in self.transProb:
+            old = t[0]
+            new = t[1]
+            cg = self.transProb[t] * pp[old]
+            self.belief.addProb(new[0],new[1], cg)
+        self.belief.normalize()
+
         # END_YOUR_CODE
       
     # Function: Get Belief
@@ -176,7 +187,21 @@ class ParticleFilter(object):
     ##################################################################################
     def observe(self, agentX, agentY, observedDist):
         # BEGIN_YOUR_CODE (our solution is 12 lines of code, but don't worry if you deviate from this)
-        raise Exception("Not implemented yet")
+        particleD = collections.Counter()
+        for p in self.particles:
+            r,c = p
+            X = util.colToX(c)
+            Y = util.rowToY(r)
+            sqr = lambda x:x**2
+            dist = math.sqrt(sqr(agentX - X) + sqr(agentY - Y))
+            cond = util.pdf(dist, Const.SONAR_STD, observedDist)
+            pp_ = self.particles[p]*cond
+            particleD[p] = pp_
+        self.particles = collections.Counter()
+        for i in range(self.NUM_PARTICLES):
+            p = util.weightedRandomChoice(particleD)
+            self.particles[p] += 1
+
         # END_YOUR_CODE
         self.updateBelief()
     
@@ -204,7 +229,16 @@ class ParticleFilter(object):
     ##################################################################################
     def elapseTime(self):
         # BEGIN_YOUR_CODE (our solution is 6 lines of code, but don't worry if you deviate from this)
-        raise Exception("Not implemented yet")
+        
+        all_ = collections.Counter()
+        for t in self.particles:
+            for i in range(self.particles[t]):
+                nxt = util.weightedRandomChoice(self.transProbDict[t])
+                if nxt in all_:
+                    all_[nxt] += 1
+                else:
+                    all_[nxt] = 1
+        self.particles = all_
         # END_YOUR_CODE
         
     # Function: Get Belief
